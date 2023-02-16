@@ -1,0 +1,164 @@
+# unity-study
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEditor;
+
+public class human : MonoBehaviour
+{
+    public float moveSpeed = 5.0f; //플레이어 이동속도
+    public float jumpPower = 10.0f; //플레이어 점프력
+
+    public Animator animator; //Animator 속성변수 생성
+    public Rigidbody2D rigid; //Rigidbody 2D 속성변수 생성
+    public SpriteRenderer spriteRenderer; //SpriteRenderer 속성변수 생성
+    
+
+    float horizontal; // 좌,우 방향값을 받는 변수
+    bool isJumping; // 현재 점프중인지 참,거짓 판별
+
+    private void Start()
+    {
+        animator = GetComponent<Animator>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        rigid = GetComponent<Rigidbody2D>();
+    }
+    private void FixedUpdate()
+    {
+        Move(); // 플레이어 이동 구현
+        Jump(); // 플레이어 점프 구현
+        Attack1(); //플레이어 근접 공격 구현
+        Debug.Log(animator.enabled);
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision) // 충돌 발생 시점에 수행할 함수
+    {
+        //OnCollisionStay2D는 충돌 발생 중에 수행할 함수
+        //OnCollisionExit2D는 충돌이 끝났을 시에 수행할 함수
+        if (collision.gameObject.CompareTag("ground"))
+        {
+            isJumping = false;
+            animator.enabled = true;
+        }
+    }
+    void Jump()
+    {
+        if (Input.GetButton("Jump")) // 점프 키가 눌렸을 때
+        {
+            if (isJumping == false) // 점프 중이지 않을 때
+            {
+                animator.SetBool("isJumping", true);
+                rigid.AddForce(Vector2.up * jumpPower, ForceMode2D.Impulse); //위쪽으로 힘을 줌
+                isJumping = true;
+            }
+            else return; // 점프 중일 때는 실행하지 않고 바로 return
+        }
+        else
+        {
+            animator.SetBool("isJumping", false);
+        }
+    }
+
+    /*void Move()
+    {
+        float hor = Input.GetAxis("Horizontal");
+
+        transform.Translate(new Vector3(Mathf.Abs(hor) * Time.deltaTime, 0, 0));
+        if (hor > 0)
+        {
+            animator.SetBool("isRunning", true);
+            transform.eulerAngles = new Vector3(0, 0, 0);
+            if (horizontal > 0)
+            {
+                spriteRenderer.flipX = false;
+            }
+            else
+            {
+                spriteRenderer.flipY = true;
+            }
+        }
+        else if (hor < 0)
+        {
+            animator.SetBool("isRunning", false);
+            transform.eulerAngles = new Vector3(0, 180, 0);
+        }
+    }
+    */
+
+    void Move()
+    {
+        horizontal = Input.GetAxis("Horizontal"); // 키보드를 좌우 버튼을 통해 -1.0f부터 1.0f까지의 값을 반환
+                                                  // (부드러운 이동이 필요할 때 사용)
+                                                  // 즉각적인 반응이 필요할 때는 GetAxisRaw사용
+
+
+        if (Mathf.Abs(horizontal) >= 0.2)
+        {
+            animator.SetBool("isRunning", true);
+
+            if (horizontal > 0)
+            {
+                spriteRenderer.flipX = false;
+            }
+            else
+            {
+                spriteRenderer.flipX = true;
+            }
+        }
+        else
+        {
+            animator.SetBool("isRunning", false);
+        }
+        Vector3 dir = horizontal * Vector3.right;
+        this.transform.Translate(dir * moveSpeed * Time.deltaTime); //오브젝트 이동 함수
+    }
+    
+
+    private float curTime;
+    private float curTime2;
+    public float coolTime = 0.5f;
+    public float coolTime2 = 0.5f;
+
+    public GameObject jab1;
+    public Transform pos;
+    public Transform pos2;
+   
+
+    void Attack1()
+    {
+        if (curTime <= 0)
+        {
+            if (Input.GetMouseButton(0))//jab
+            {
+                
+                animator.SetTrigger("jab");
+                curTime = coolTime;
+                if (spriteRenderer.flipX == false)
+                {
+                    Instantiate(jab1, pos.position, transform.rotation);
+                }
+                else if (spriteRenderer.flipX == true)
+                {
+                    Instantiate(jab1, pos2.position, transform.rotation);
+                }
+            }
+        }
+        else
+        {
+            curTime -= Time.deltaTime;
+        }
+
+        if (curTime2 <= 0)
+        {
+            if (Input.GetMouseButton(1))//punch
+            {
+                animator.SetTrigger("punch");
+                curTime2 = coolTime2;
+            }
+        }
+        else
+        {
+            curTime2 -= Time.deltaTime;
+        }
+    }
+}
